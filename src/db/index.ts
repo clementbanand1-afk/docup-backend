@@ -1,20 +1,6 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 
-// ============================================================
-// Persistance réelle via SQLite (fichier local sur disque). Ça
-// résout le problème "un redémarrage serveur remet tout à zéro"
-// des Map() en mémoire, sans exiger de configurer un vrai serveur
-// Postgres/Redis avant même d'avoir un utilisateur payant.
-//
-// Limite assumée : SQLite ne supporte qu'une seule instance serveur
-// à la fois (pas d'écriture concurrente multi-process). Suffisant
-// pour démarrer et valider le produit. Le jour où tu scales sur
-// plusieurs instances (load balancer), migre vers Postgres — le
-// SQL ci-dessous est volontairement simple pour rendre cette
-// migration directe (mêmes noms de tables/colonnes).
-// ============================================================
-
 const DB_PATH = process.env.DATABASE_PATH || path.join(__dirname, '../../data.sqlite');
 
 export const db = new Database(DB_PATH);
@@ -43,9 +29,6 @@ db.exec(`
     credits INTEGER NOT NULL DEFAULT 0
   );
 
-  -- Statut d'abonnement, tenu à jour par les webhooks RevenueCat
-  -- (voir routes/revenuecatWebhook.ts) — source de vérité SERVEUR,
-  -- indépendante de ce que le SDK client affirme.
   CREATE TABLE IF NOT EXISTS subscriptions (
     deviceId TEXT PRIMARY KEY,
     isPremium INTEGER NOT NULL DEFAULT 0,
@@ -62,4 +45,11 @@ db.exec(`
   );
   CREATE INDEX IF NOT EXISTS idx_analytics_name ON analytics_events(name);
   CREATE INDEX IF NOT EXISTS idx_analytics_timestamp ON analytics_events(timestampISO);
+
+  CREATE TABLE IF NOT EXISTS push_tokens (
+    deviceId TEXT PRIMARY KEY,
+    pushToken TEXT NOT NULL,
+    platform TEXT,
+    updatedAtISO TEXT NOT NULL
+  );
 `);
