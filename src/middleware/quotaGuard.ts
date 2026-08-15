@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { db } from '../db';
 
 // ============================================================
-// Garde-fou serveur : même règle métier que côté app (2 docs/mois
+// Garde-fou serveur : même règle métier que côté app (1 doc/mois
 // pour les non-Premium), appliquée indépendamment du client pour
 // empêcher toute triche (app modifiée, requêtes directes, etc).
 // Persisté en SQLite (voir db/index.ts) : survit aux redémarrages
@@ -14,7 +14,7 @@ import { db } from '../db';
 // `false` comme avant.
 // ============================================================
 
-const FREE_LIMIT_PER_MONTH = 2;
+const FREE_LIMIT_PER_MONTH = 1;
 
 function currentMonthKey(): string {
   const d = new Date();
