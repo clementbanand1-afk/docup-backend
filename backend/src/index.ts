@@ -7,7 +7,6 @@ import revenuecatWebhookRoute from './routes/revenuecatWebhook';
 import pushRoute from './routes/push';
 import stripeRoute from './routes/stripe';
 import stripeWebhookRoute from './routes/stripeWebhook';
-import statsRoute from './routes/stats';
 import './db'; // initialise la connexion SQLite + le schéma au démarrage
 
 const app = express();
@@ -27,7 +26,6 @@ app.use('/api/analytics', analyticsRoute);
 app.use('/api/revenuecat', revenuecatWebhookRoute);
 app.use('/api/push', pushRoute);
 app.use('/api/stripe', stripeRoute);
-app.use('/api/stats', statsRoute);
 
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
