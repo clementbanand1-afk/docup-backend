@@ -72,4 +72,27 @@ db.exec(`
     platform TEXT,
     updatedAtISO TEXT NOT NULL
   );
+
+  -- Débloque UN document web (retrait filigrane) via achat unique Stripe.
+  -- Volontairement séparée de la table subscriptions/isPremium : un Pass
+  -- Document n'est PAS un abonnement illimité, mélanger les deux donnerait
+  -- un accès gratuit à vie par erreur. Voir routes/stripeWebhook.ts.
+  CREATE TABLE IF NOT EXISTS web_document_unlocks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    deviceId TEXT NOT NULL,
+    templateTitle TEXT,
+    unlockedAtISO TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_web_unlocks_device ON web_document_unlocks(deviceId);
+
+  -- Preuve horodatée du consentement explicite à l'exécution immédiate +
+  -- renonciation au droit de rétractation (Article L221-28 15° du Code de
+  -- la consommation), enregistrée AVANT la création de la session Stripe.
+  -- Sert de preuve en cas de litige/réclamation — voir CGV Article 6.
+  CREATE TABLE IF NOT EXISTS checkout_consents (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    deviceId TEXT NOT NULL,
+    templateTitle TEXT,
+    consentedAtISO TEXT NOT NULL
+  );
 `);
