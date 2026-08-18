@@ -95,4 +95,26 @@ db.exec(`
     templateTitle TEXT,
     consentedAtISO TEXT NOT NULL
   );
+
+  -- Capture d'email "Kit de survie administratif" (guides) — consentement
+  -- RGPD explicite obligatoire (voir formulaire). Aucun envoi automatique
+  -- de PDF pour l'instant : nécessite un service d'email (Resend/SendGrid)
+  -- non encore configuré. Cette table stocke juste la demande, honnêtement.
+  CREATE TABLE IF NOT EXISTS guide_email_leads (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT NOT NULL,
+    guideSlug TEXT,
+    consentedAtISO TEXT NOT NULL
+  );
+
+  -- Mini-sondage de satisfaction post-génération (👍/👎) — vraie donnée,
+  -- pas affichée publiquement pour l'instant (pas assez de volume pour
+  -- être un vrai indicateur), utile pour toi en interne.
+  CREATE TABLE IF NOT EXISTS document_feedback (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    deviceId TEXT,
+    templateId TEXT,
+    helpful INTEGER NOT NULL,
+    createdAtISO TEXT NOT NULL
+  );
 `);

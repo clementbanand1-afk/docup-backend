@@ -32,4 +32,32 @@ router.get('/documents-total', (_req, res) => {
   res.json({ count: row.count });
 });
 
+// Top documents RÉELS — jamais une popularité supposée. Retourne un
+// tableau vide si moins de 5 générations au total, plutôt que d'exposer
+// un "classement" statistiquement non significatif.
+router.get('/top-documents', (_req, res) => {
+  const rows = db
+    .prepare(`SELECT properties FROM analytics_events WHERE name = 'document_generated_web'`)
+    .all() as { properties: string }[];
+
+  if (rows.length < 5) {
+    return res.json({ top: [] });
+  }
+
+  const counts: Record<string, number> = {};
+  for (const row of rows) {
+    try {
+      const templateId = JSON.parse(row.properties)?.templateId;
+      if (templateId) counts[templateId] = (counts[templateId] || 0) + 1;
+    } catch {}
+  }
+
+  const top = Object.entries(counts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([templateId, count]) => ({ templateId, count }));
+
+  res.json({ top });
+});
+
 export default router;

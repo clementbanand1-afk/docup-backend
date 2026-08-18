@@ -3,6 +3,7 @@ import { quotaGuard } from '../middleware/quotaGuard';
 import { webRateLimitGuard } from '../middleware/webRateLimitGuard';
 import { generateLetterBody } from '../services/aiClient';
 import { TEMPLATES } from '../data/templatesMirror';
+import { db } from '../db';
 
 const router = Router();
 
@@ -42,6 +43,13 @@ router.post('/generate-web', webRateLimitGuard, async (req, res) => {
 
   try {
     const documentText = await generateLetterBody(template.aiPromptTemplate, fieldValues);
+    // Événement réel, utilisé par /api/stats/documents-today pour le
+    // compteur affiché sur le site web — jamais de chiffre inventé côté
+    // frontend, uniquement ce qui a vraiment été généré.
+    const deviceId = req.headers.authorization?.replace('Bearer ', '') ?? 'unknown';
+    db.prepare(
+      `INSERT INTO analytics_events (deviceId, name, properties, timestampISO) VALUES (?, 'document_generated_web', ?, ?)`
+    ).run(deviceId, JSON.stringify({ templateId }), new Date().toISOString());
     res.json({ documentText, generatedAtISO: new Date().toISOString() });
   } catch (e) {
     console.error('Erreur génération IA (web)', e);
