@@ -31,6 +31,10 @@ app.use('/api/stripe', stripeRoute);
 app.use('/api/stats', statsRoute);
 app.use('/api/leads', leadsRoute);
 
+// Route racine — nécessaire pour les outils de monitoring externes
+// (UptimeRobot etc.) qui pingent le domaine tel quel, sans chemin précis.
+app.get('/', (_req, res) => res.json({ status: 'ok', service: 'docup-backend' }));
+
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
 const PORT = process.env.PORT || 3000;
