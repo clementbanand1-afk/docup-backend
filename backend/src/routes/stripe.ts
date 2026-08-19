@@ -30,6 +30,9 @@ router.post('/create-checkout-session', async (req, res) => {
   if (!PRICE_ID_PASS_DOCUMENT) {
     return res.status(500).json({ error: 'STRIPE_PRICE_ID_PASS_DOCUMENT non configuré côté serveur' });
   }
+  if (!stripe) {
+    return res.status(503).json({ error: 'STRIPE_NOT_CONFIGURED', message: 'Le paiement n\'est pas encore activé côté serveur.' });
+  }
   // Le serveur EXIGE ce consentement, ne fait pas juste confiance au
   // frontend — Article L221-28 15° Code conso : la renonciation au droit
   // de rétractation doit être expresse, jamais présumée.

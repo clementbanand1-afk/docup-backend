@@ -19,6 +19,9 @@ const router = Router();
 const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || '';
 
 router.post('/', (req, res) => {
+  if (!stripe) {
+    return res.status(503).json({ error: 'STRIPE_NOT_CONFIGURED' });
+  }
   const signature = req.headers['stripe-signature'] as string;
 
   let event;
