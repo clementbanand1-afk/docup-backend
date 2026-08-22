@@ -36,6 +36,7 @@ router.post('/create-checkout-session', async (req, res) => {
   if (!stripe) {
     return res.status(503).json({ error: 'STRIPE_NOT_CONFIGURED', message: 'Le paiement n\'est pas encore activé côté serveur.' });
   }
+  
   // Le serveur EXIGE ce consentement, ne fait pas juste confiance au
   // frontend — Article L221-28 15° Code conso : la renonciation au droit
   // de rétractation doit être expresse, jamais présumée.
@@ -43,9 +44,7 @@ router.post('/create-checkout-session', async (req, res) => {
     return res.status(400).json({ error: 'CONSENT_REQUIRED', message: 'Consentement à l\'exécution immédiate requis avant paiement.' });
   }
 
-  // Preuve horodatée du consentement, AVANT création de la session Stripe
-  // (donc même si l'utilisateur abandonne le paiement ensuite, la preuve
-  // qu'il a consenti à CE moment précis reste enregistrée).
+  // Preuve horodatée du consentement
   db.prepare(
     `INSERT INTO checkout_consents (deviceId, templateTitle, consentedAtISO) VALUES (?, ?, ?)`
   ).run(deviceId, templateTitle ?? null, new Date().toISOString());
@@ -56,10 +55,9 @@ router.post('/create-checkout-session', async (req, res) => {
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: successUrl,
       cancel_url: cancelUrl,
-      // Le deviceId (identité anonyme web, voir webapp/src/services/identity.ts)
-      // est passé en metadata pour que le webhook sache quel appareil marquer
-      // comme débloqué une fois le paiement confirmé, et quelle offre a été
-      // choisie (pour afficher le guide LRAR uniquement au Pack Pro).
+      // Activation de la saisie de code promotionnel sur la page Checkout
+      allow_promotion_codes: true,
+      // Le deviceId est passé en metadata pour le webhook
       metadata: { deviceId, productType, templateTitle: templateTitle ?? '' },
     });
 
