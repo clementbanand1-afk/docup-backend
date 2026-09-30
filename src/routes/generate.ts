@@ -4,6 +4,7 @@ import { webRateLimitGuard } from '../middleware/webRateLimitGuard';
 import { generateLetterBody } from '../services/aiClient';
 import { TEMPLATES } from '../data/templatesMirror';
 import { db } from '../db';
+import { lockDocument, buildPreview } from '../services/docLock';
 
 const router = Router();
 
@@ -50,7 +51,17 @@ router.post('/generate-web', webRateLimitGuard, async (req, res) => {
     db.prepare(
       `INSERT INTO analytics_events (deviceId, name, properties, timestampISO) VALUES (?, 'document_generated_web', ?, ?)`
     ).run(deviceId, JSON.stringify({ templateId }), new Date().toISOString());
-    res.json({ documentText, generatedAtISO: new Date().toISOString() });
+    // Le document complet ne quitte JAMAIS le serveur en clair avant
+    // paiement : aperçu (~35 %) + jeton chiffré (voir services/docLock.ts).
+    const { token, documentId } = lockDocument(documentText);
+    const { previewText, hiddenParagraphs } = buildPreview(documentText);
+    res.json({
+      previewText,
+      hiddenParagraphs,
+      lockedToken: token,
+      documentId,
+      generatedAtISO: new Date().toISOString(),
+    });
   } catch (e) {
     console.error('Erreur génération IA (web)', e);
     res.status(500).json({ error: 'Échec de la génération' });
